@@ -79,7 +79,7 @@ class MediaFragment : Fragment() ,MediaPlayer.OnPreparedListener , SurfaceHolder
             mediaPlayer?.let {
                 Log.e(tag , "点击了播放键")
                 //加载本地文件路径的音视频
-                mediaPlayerPrepare(url = path + "/test1.avi")
+                mediaPlayerPrepare(url = path + "/jay_dont_cry.mp3")
                 //加载网络URL，会出异常 E/MediaPlayerNative: error (1, -2147483648)
 //                  mediaPlayerPrepare(url = songs[0])
             }
@@ -98,23 +98,26 @@ class MediaFragment : Fragment() ,MediaPlayer.OnPreparedListener , SurfaceHolder
     private fun mediaPlayerPrepare(url : String ?= null , uri : Uri?= null ) {
 
         mediaPlayer?.apply {
-            try {
-                url?.let {
-                    Log.e(tag ,"准备音频的路径URL：   "+it)
-                    setDataSource(it)
+            //在非播放状态或者未设置音频路径才设置数据源
+            if( ! isPlaying) {
+                try {
+                    url?.let {
+                        Log.e(tag ,"准备音频的路径URL：   "+it)
+                        setDataSource(it)
+                    }
+                    uri?.let {
+                        setDataSource(MyApp.CONTEXT ,it)
+                    }
+                    setOnPreparedListener(this@MediaFragment)
+                }catch (e : IOException) {
+                    e.printStackTrace()
+                    throw(e)
+                }catch (e1 : IllegalStateException) {
+                    e1.printStackTrace()
+                    throw (e1)
                 }
-                uri?.let {
-                    setDataSource(MyApp.CONTEXT ,it)
-                }
-                setOnPreparedListener(this@MediaFragment)
-            }catch (e : IOException) {
-                e.printStackTrace()
-                throw(e)
-            }catch (e1 : IllegalStateException) {
-                e1.printStackTrace()
-                throw (e1)
+                prepareAsync()
             }
-            prepareAsync()
         }
 
     }
