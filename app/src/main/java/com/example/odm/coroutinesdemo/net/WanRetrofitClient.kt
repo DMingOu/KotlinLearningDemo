@@ -16,8 +16,8 @@ object WanRetrofitClient : BaseRetrofitClient() {
 
     //实际调用实例
     val service by lazy { getService(
-        WanService::class.java,
-        WanService.BASE_URL
+        ApiService::class.java,
+        ApiService.BASE_URL
     ) }
     //缓存
     val httpCacheDirectory = File(MyApp.CONTEXT.cacheDir, "responses")

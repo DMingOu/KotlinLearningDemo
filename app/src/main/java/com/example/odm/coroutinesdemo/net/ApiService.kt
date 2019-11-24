@@ -14,7 +14,7 @@ import retrofit2.http.Url
  * @date: 2019/11/17
  */
 
-interface WanService {
+interface ApiService {
 
     companion object {
         const val BASE_URL = "https://www.wanandroid.com"

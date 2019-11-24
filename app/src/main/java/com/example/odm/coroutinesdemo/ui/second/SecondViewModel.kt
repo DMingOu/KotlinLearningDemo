@@ -4,11 +4,11 @@ import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import androidx.lifecycle.*
+import com.example.odm.coroutinesdemo.Application.MyApp
 import com.example.odm.coroutinesdemo.base.BaseViewModel
 import com.example.odm.coroutinesdemo.bean.Banner
 import com.example.odm.coroutinesdemo.model.Result
 import com.example.odm.coroutinesdemo.net.WanRetrofitClient
-import com.example.odm.coroutinesdemo.net.WanService
 import com.example.odm.coroutinesdemo.ui.second.SecondViewModel.Companion.tag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -125,8 +125,15 @@ class SecondViewModel (private val repository: SecondRepository) : BaseViewModel
     private suspend fun saveDownLoadFile(body : ResponseBody ? , url : String ) = withContext(Dispatchers.IO) {
         if (body != null ) {
             Log.e(tag ,"创建对应文件")
-            val path = Environment.getExternalStoragePublicDirectory("").absolutePath
-            val file = File("${path}/Download/${url.substringAfterLast("/")}")
+//            val path = Environment.getExternalStoragePublicDirectory("").absolutePath
+            //将下载的文件保存在/storage/emulated/0/Android/data/com.example.odm.coroutinesdemo/files/Download 文件夹中
+            val path = MyApp.CONTEXT.getExternalFilesDir(null)?.toString()+ "/Download"
+
+            Log.e(tag ,path)
+            val file1 = File(path)
+            file1.mkdirs()
+            //！！getExternalFilesDir(null)方法：如果直接拼接出总Path创建文件，会出错，要先创建好目录再创建文件
+            val file = File("${path}/${url.substringAfterLast("/")}")
             file.createNewFile()
             var inStream: InputStream? = null
             var outStream: OutputStream? = null
