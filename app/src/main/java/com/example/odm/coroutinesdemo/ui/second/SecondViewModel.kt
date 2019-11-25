@@ -125,15 +125,15 @@ class SecondViewModel (private val repository: SecondRepository) : BaseViewModel
     private suspend fun saveDownLoadFile(body : ResponseBody ? , url : String ) = withContext(Dispatchers.IO) {
         if (body != null ) {
             Log.e(tag ,"创建对应文件")
+            //获取路径为/storage/emulated/0
 //            val path = Environment.getExternalStoragePublicDirectory("").absolutePath
             //将下载的文件保存在/storage/emulated/0/Android/data/com.example.odm.coroutinesdemo/files/Download 文件夹中
-            val path = MyApp.CONTEXT.getExternalFilesDir(null)?.toString()+ "/Download"
-
+            val path = MyApp.CONTEXT.getExternalFilesDir(null)?.absolutePath
             Log.e(tag ,path)
-            val file1 = File(path)
+            val file1 = File("${path}/Download")
             file1.mkdirs()
             //！！getExternalFilesDir(null)方法：如果直接拼接出总Path创建文件，会出错，要先创建好目录再创建文件
-            val file = File("${path}/${url.substringAfterLast("/")}")
+            val file = File("${path}/Download/${url.substringAfterLast("/")}")
             file.createNewFile()
             var inStream: InputStream? = null
             var outStream: OutputStream? = null
@@ -150,16 +150,21 @@ class SecondViewModel (private val repository: SecondRepository) : BaseViewModel
                 val buff = ByteArray(1024)
                 var len = inStream.read(buff)
                 var percent = 0
-                while (len != -1) {
+                while (len != -1 ) {
                     outStream.write(buff, 0, len)
                     currentLength += len
-                    /*不要频繁的调用切换线程,否则某些手机可能因为频繁切换线程导致卡顿,
-                这里加一个限制条件,只有下载百分比更新了才切换线程去更新UI*/
-                    if ((currentLength * 100 / contentLength).toInt() > percent) {
-                        percent = (currentLength / contentLength * 100).toInt()
+                    if(currentLength == contentLength ) {
+                        launch {
+                            updateDownLoadCompleted(file)
+                        }
+                        break
+                    } else if ((currentLength * 100.0 / contentLength).toInt() > percent) {
+                        /*不要频繁的调用切换线程,否则某些手机可能因为频繁切换线程导致卡顿,
+                            这里加一个限制条件,只有下载百分比更新了才切换线程去更新UI*/
+                        percent = (currentLength * 100.0 / contentLength ).toInt()
                         //切换到主线程更新UI
                         launch {
-                             updateDownLoadState(currentLength , contentLength ,file)
+                             updateDownLoadState(currentLength , contentLength)
                             //更新完成UI之后立刻切回IO线程
                         }
                     }
@@ -177,16 +182,15 @@ class SecondViewModel (private val repository: SecondRepository) : BaseViewModel
         }
     }
 
-    private suspend fun updateDownLoadState(currentLength : Long ,contentLength: Long ,file : File ) = withContext(Dispatchers.Main) {
-        _downLoadState.value = "正在将文件流转换为文件:$currentLength / $contentLength"
-        Log.e(tag , "正在将文件流转换为文件:$currentLength / $contentLength")
-        if(currentLength == contentLength) {
-            _downLoadState.value = "下载完成"
-             updateDownLoadImage(file)
+    private suspend fun updateDownLoadState(currentLength : Long ,contentLength: Long ) = withContext(Dispatchers.Main) {
+        if(currentLength != contentLength) {
+            _downLoadState.value = "正在将文件流转换为文件:${(currentLength * 100.0 /contentLength).toInt()}%"
+//            Log.e(tag,"time: ${System.currentTimeMillis()}   正在将文件流转换为文件:${(currentLength * 1.0 /contentLength * 100).toInt()}%")
         }
     }
 
-    private fun updateDownLoadImage(downLoadImg : File ) {
+    private suspend fun updateDownLoadCompleted(downLoadImg : File ) = withContext(Dispatchers.Main) {
+        _downLoadState.value = "下载完成"
         _picDownLoadImg.value  = Uri.fromFile(downLoadImg)
     }
 
