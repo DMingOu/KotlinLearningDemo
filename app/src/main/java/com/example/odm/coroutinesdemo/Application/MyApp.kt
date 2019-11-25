@@ -2,11 +2,13 @@ package com.example.odm.coroutinesdemo.Application
 
 import android.app.Application
 import android.content.Context
+import com.example.odm.coroutinesdemo.Constants
 import com.example.odm.coroutinesdemo.di.AppModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidFileProperties
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
+import java.io.File
 import kotlin.properties.Delegates
 
 /**
@@ -31,5 +33,8 @@ import kotlin.properties.Delegates
             //androidFileProperties()
             modules(AppModule)
         }
+        //为App创建好Download目录
+        File(Constants.DOWNLOAD_PATH).mkdirs()
+
     }
 }

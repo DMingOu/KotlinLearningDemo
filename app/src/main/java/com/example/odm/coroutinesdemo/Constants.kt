@@ -8,4 +8,7 @@ import com.example.odm.coroutinesdemo.Application.MyApp
  * @date: 2019/11/24
  */
 
-val path = MyApp.CONTEXT.getExternalFilesDir(null)?.toString()+ "/Download"
+object Constants {
+    val DOWNLOAD_PATH = MyApp.CONTEXT.getExternalFilesDir(null)?.absolutePath+ "/Download"
+}
+

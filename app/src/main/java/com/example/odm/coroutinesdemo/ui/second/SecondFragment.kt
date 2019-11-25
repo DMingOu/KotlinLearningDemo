@@ -68,11 +68,10 @@ class SecondFragment : Fragment() {
         btnRefreshData?.setOnClickListener {
             //调用ViewModel方法，刷新Banner数据
             viewModel.getBannerData()
-
         }
         btnDownLoad.setOnClickListener {
             //下载网络资源
-            viewModel.downLoadData("https://www.wanandroid.com/blogimgs/f6c9dde1-151e-40a0-add7-34a28fcd325b.png")
+            viewModel.downLoadData("https://www.wanandroid.com/blogimgs/90c6cc12-742e-4c9f-b318-b912f163b8d0.png")
         }
 
     }

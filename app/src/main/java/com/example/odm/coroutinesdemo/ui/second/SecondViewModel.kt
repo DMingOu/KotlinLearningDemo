@@ -5,6 +5,7 @@ import android.os.Environment
 import android.util.Log
 import androidx.lifecycle.*
 import com.example.odm.coroutinesdemo.Application.MyApp
+import com.example.odm.coroutinesdemo.Constants
 import com.example.odm.coroutinesdemo.base.BaseViewModel
 import com.example.odm.coroutinesdemo.bean.Banner
 import com.example.odm.coroutinesdemo.model.Result
@@ -85,9 +86,12 @@ class SecondViewModel (private val repository: SecondRepository) : BaseViewModel
             val  result = repository.suspendDownLoadData(url)
             if(result.isSuccessful) {
                 Log.e(tag, "Response成功返回")
-                //切到 IO 线程下 进行文件写入
+                //创建文件后要切到 IO 线程下 进行文件写入
                 launch {
-                    saveDownLoadFile(result.body() ,url)
+                    creteFile(url)?.let {
+                        saveDownLoadFile(result.body() , it)
+                        downLoadFileCompleted(it)
+                    }
                 }
             }
 /*---------------上面采用纯协程切换方法，下面采用回调+协程切换----------------------------*/
@@ -119,22 +123,33 @@ class SecondViewModel (private val repository: SecondRepository) : BaseViewModel
     }
 
     /**
-     * 创建对应文件
-     * ResponseBody-->转换成文件流传入文件
+     * 根据传入的指定Url和常量Path创建本地文件
+     * 可能创建失败，因此设为 可空变量
      */
-    private suspend fun saveDownLoadFile(body : ResponseBody ? , url : String ) = withContext(Dispatchers.IO) {
-        if (body != null ) {
-            Log.e(tag ,"创建对应文件")
+    private fun creteFile(url: String)  : File ?{
+         return File(Constants.DOWNLOAD_PATH, url.substringAfterLast("/")) .apply {
+            createNewFile()
+            //apply函数自动返回自身
+        }
+    }
+
+    /**
+     * ResponseBody-->转换成文件流传入文件，
+     * 同时输出转换进度到UI层
+     */
+    private suspend fun saveDownLoadFile(body : ResponseBody ? , file : File ) = withContext(Dispatchers.IO) {
+        body?.let {
             //获取路径为/storage/emulated/0
 //            val path = Environment.getExternalStoragePublicDirectory("").absolutePath
             //将下载的文件保存在/storage/emulated/0/Android/data/com.example.odm.coroutinesdemo/files/Download 文件夹中
-            val path = MyApp.CONTEXT.getExternalFilesDir(null)?.absolutePath
-            Log.e(tag ,path)
-            val file1 = File("${path}/Download")
-            file1.mkdirs()
+
+//            val file1 = File(Constants.path)
+//            file1.mkdirs()
             //！！getExternalFilesDir(null)方法：如果直接拼接出总Path创建文件，会出错，要先创建好目录再创建文件
-            val file = File("${path}/Download/${url.substringAfterLast("/")}")
-            file.createNewFile()
+//            val file = File("${Constants.path}/${url.substringAfterLast("/")}")
+
+//            val file  = File(Constants.DOWNLOAD_PATH, url.substringAfterLast("/"))
+////            file.createNewFile()
             var inStream: InputStream? = null
             var outStream: OutputStream? = null
             try {
@@ -153,18 +168,15 @@ class SecondViewModel (private val repository: SecondRepository) : BaseViewModel
                 while (len != -1 ) {
                     outStream.write(buff, 0, len)
                     currentLength += len
+                    //当文件写入长度和总长度相等时说明可以退出写入循环
                     if(currentLength == contentLength ) {
-                        launch {
-                            updateDownLoadCompleted(file)
-                        }
                         break
                     } else if ((currentLength * 100.0 / contentLength).toInt() > percent) {
-                        /*不要频繁的调用切换线程,否则某些手机可能因为频繁切换线程导致卡顿,
-                            这里加一个限制条件,只有下载百分比更新了才切换线程去更新UI*/
+                        /*不要频繁的调用切换线程,否则某些手机可能因为频繁切换线程导致卡顿,所以加一个限制条件,只有下载百分比更新了才切换线程去更新UI*/
                         percent = (currentLength * 100.0 / contentLength ).toInt()
                         //切换到主线程更新UI
                         launch {
-                             updateDownLoadState(currentLength , contentLength)
+                            updateDownLoadState(currentLength , contentLength)
                             //更新完成UI之后立刻切回IO线程
                         }
                     }
@@ -175,10 +187,7 @@ class SecondViewModel (private val repository: SecondRepository) : BaseViewModel
             } finally {
                 inStream?.close()
                 outStream?.close()
-
             }
-        } else {
-            Log.e(tag, "response出错了或者 body为空")
         }
     }
 
@@ -189,7 +198,7 @@ class SecondViewModel (private val repository: SecondRepository) : BaseViewModel
         }
     }
 
-    private suspend fun updateDownLoadCompleted(downLoadImg : File ) = withContext(Dispatchers.Main) {
+    private  fun downLoadFileCompleted(downLoadImg : File ) {
         _downLoadState.value = "下载完成"
         _picDownLoadImg.value  = Uri.fromFile(downLoadImg)
     }
