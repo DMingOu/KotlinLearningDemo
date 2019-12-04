@@ -13,9 +13,10 @@ import android.widget.Toast
 import com.example.odm.coroutinesdemo.R
 import com.example.odm.coroutinesdemo.bean.Banner
 import com.example.odm.coroutinesdemo.net.WanRetrofitClient
+import com.example.odm.coroutinesdemo.singleClick
+import com.example.odm.coroutinesdemo.ui.jsoup.JSoupFragment
 import com.example.odm.coroutinesdemo.ui.media.MediaFragment
 import com.example.odm.coroutinesdemo.ui.second.SecondActivity
-import com.example.odm.coroutinesdemo.ui.second.SecondFragment
 import com.example.odm.coroutinesdemo.ui.third.ThirdActivity
 import com.tbruyelle.rxpermissions2.RxPermissions
 import kotlinx.coroutines.*
@@ -78,16 +79,23 @@ class MainActivity : AppCompatActivity() , CoroutineScope by MainScope(){
     fun onViewClicked(view : View) {
         when(view.id) {
             //获取Banner数据
-            R.id.btn_get_data ->  getBannerData()
+            R.id.btn_get_data ->  view.singleClick { getBannerData() }
             //跳转第二个页面
-            R.id.btn_jump_activity2 -> {startActivity(Intent().setClass(this , SecondActivity::class.java))}
+            R.id.btn_jump_activity2 -> { view.singleClick {  startActivity(Intent().setClass(this , SecondActivity::class.java))}}
             //跳转到第三个页面
-            R.id.btn_jump_third -> {  startActivity(Intent().setClass(this , ThirdActivity::class.java)) }
+            R.id.btn_jump_third -> {  view.singleClick {startActivity(Intent().setClass(this , ThirdActivity::class.java))  } }
             //跳转到音频播放页面
             R.id.btn_jump_media -> {
-                supportFragmentManager.beginTransaction()
+                view.singleClick { supportFragmentManager.beginTransaction()
                     .replace(R.id.fl_main_contain, MediaFragment.newInstance())
-                    .commitNow()
+                    .commitNow() }
+            }
+            R.id.btn_jump_jsoup -> {
+                view.singleClick {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.fl_main_contain, JSoupFragment.newInstance())
+                        .commitNow()
+                }
             }
         }
     }

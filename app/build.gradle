@@ -56,4 +56,6 @@ dependencies {
     implementation 'org.koin:koin-android-ext:2.0.1'
     //申请权限
     implementation 'com.tbruyelle.rxpermissions2:rxpermissions:0.9.5'
+    //jsoup 解析html
+    implementation 'org.jsoup:jsoup:1.12.1'
 }
